@@ -10,8 +10,15 @@
 #define NotifyHeight 70.0f
 #define NotifyWIDTH [UIScreen mainScreen].bounds.size.width
 static BOOL isAnimation = NO;
-@interface JNetNotifyView(){
+@interface JNetNotifyView()<UIGestureRecognizerDelegate>{
+    
     dispatch_queue_t _asyncQueue;
+    
+    JNetNotifyViewSubStyle _style;
+    
+    UISwipeGestureRecognizer *_swipeGesture;
+    
+    BOOL _isAuto;
 }
 
 @property(nonatomic,strong,readwrite)NSMutableArray <JNetNotifyMessage *>*messageQueue;
@@ -26,27 +33,63 @@ static BOOL isAnimation = NO;
 
 -(void)defaultBuild;
 -(void)handleNextMessage:(JNetNotifyMessage *)nextMessage;
-
+-(void)nextMessageAnimation;
 @end
 
 @implementation JNetNotifyView
 
--(instancetype)init
+-(instancetype)initWithFrame:(CGRect)frame
 {
-    return [self initWithJNetNotifyViewSubStyle:JNetNotifyViewSubStyleDefault];
+    return [self initWithJNetNotifyViewSubStyle:JNetNotifyViewSubStyleDefault autoAnimation:YES];
 }
 
--(instancetype)initWithJNetNotifyViewSubStyle:(JNetNotifyViewSubStyle)style
+-(instancetype)init
+{
+    return [self initWithJNetNotifyViewSubStyle:JNetNotifyViewSubStyleDefault autoAnimation:YES];
+}
+
+-(instancetype)initWithJNetNotifyViewSubStyle:(JNetNotifyViewSubStyle)style autoAnimation:(BOOL)isAutoAnimation
 {
     NSLog(@"%@",[NSThread currentThread]);
     self=[super initWithFrame:CGRectMake(0, -NotifyHeight, NotifyWIDTH, NotifyHeight)];
     if (self) {
+        _style=style;
+        _isAuto=isAutoAnimation;
         _messageQueue=[NSMutableArray array];
         self.backgroundColor=[UIColor whiteColor];
         _asyncQueue=dispatch_queue_create("jingwei", NULL);
-        [self defaultBuild];
+        if (style==JNetNotifyViewSubStyleDefault) {
+            [self defaultBuild];
+        }
+        if (!isAutoAnimation) {
+            _swipeGesture=[[UISwipeGestureRecognizer alloc]initWithTarget:self action:@selector(swipe:)];
+            _swipeGesture.delegate=self;
+            _swipeGesture.direction=UISwipeGestureRecognizerDirectionRight;
+            [self addGestureRecognizer:_swipeGesture];
+        }
+        
     }
     return self;
+}
+
+-(void)swipe:(UISwipeGestureRecognizer *)gsture
+{
+    [self nextMessageAnimation];
+}
+
+-(void)nextMessageAnimation
+{
+    [UIView animateWithDuration:0.2f delay:0.0f options:UIViewAnimationOptionCurveEaseOut animations:^{
+        self.frame=CGRectMake(NotifyWIDTH, 0, NotifyWIDTH, NotifyHeight);
+    } completion:^(BOOL finished) {
+        self.frame=CGRectMake(0, -NotifyHeight, NotifyWIDTH, NotifyHeight);
+        [_messageQueue removeLastObject];
+        if (_messageQueue.count>0) {
+            [self handleNextMessage:_messageQueue.lastObject];
+        }
+        else
+            isAnimation=NO;
+    }];
 }
 
 -(void)defaultBuild
@@ -73,6 +116,7 @@ static BOOL isAnimation = NO;
     
 }
 
+
 -(void)addNextMessage:(JNetNotifyMessage *)message
 {
     @synchronized (_messageQueue){
@@ -90,7 +134,7 @@ static BOOL isAnimation = NO;
     //后面改为异步
     
     dispatch_async(_asyncQueue, ^{
-        NSData *tmp=[NSData dataWithContentsOfURL:[NSURL URLWithString:nextMessage.imageUrl]];
+//        NSData *tmp=[NSData dataWithContentsOfURL:[NSURL URLWithString:nextMessage.imageUrl]];
         dispatch_async(dispatch_get_main_queue(), ^{
 //            self.imageView.image=[UIImage imageWithData:tmp];
             self.imageView.image=[UIImage imageNamed:@"timg.jpeg"];
@@ -100,17 +144,21 @@ static BOOL isAnimation = NO;
             [UIView animateWithDuration:0.2f delay:0.1f options:UIViewAnimationOptionCurveEaseOut animations:^{
                 self.frame=CGRectMake(0, 0, NotifyWIDTH, NotifyHeight);
             } completion:^(BOOL finished) {
-                [UIView animateWithDuration:0.2f delay:3.0f options:UIViewAnimationOptionCurveEaseOut animations:^{
-                    self.frame=CGRectMake(NotifyWIDTH, 0, NotifyWIDTH, NotifyHeight);
-                } completion:^(BOOL finished) {
-                    self.frame=CGRectMake(0, -NotifyHeight, NotifyWIDTH, NotifyHeight);
-                    [_messageQueue removeLastObject];
-                    if (_messageQueue.count>0) {
-                        [self handleNextMessage:_messageQueue.lastObject];
-                    }
-                    else
-                        isAnimation=NO;
-                }];
+                
+                if (_isAuto) {
+                    [UIView animateWithDuration:0.2f delay:3.0f options:UIViewAnimationOptionCurveEaseOut animations:^{
+                        self.frame=CGRectMake(NotifyWIDTH, 0, NotifyWIDTH, NotifyHeight);
+                    } completion:^(BOOL finished) {
+                        self.frame=CGRectMake(0, -NotifyHeight, NotifyWIDTH, NotifyHeight);
+                        [_messageQueue removeLastObject];
+                        if (_messageQueue.count>0) {
+                            [self handleNextMessage:_messageQueue.lastObject];
+                        }
+                        else
+                            isAnimation=NO;
+                    }];
+                }
+                
             }];
         });
         

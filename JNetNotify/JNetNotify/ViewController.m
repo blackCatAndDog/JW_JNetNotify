@@ -20,7 +20,7 @@ static int count = 0;
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor=[UIColor yellowColor];
-    _notifyView=[[JNetNotifyView alloc]initWithJNetNotifyViewSubStyle:JNetNotifyViewSubStyleDefault];
+    _notifyView=[[JNetNotifyView alloc]initWithJNetNotifyViewSubStyle:JNetNotifyViewSubStyleDefault autoAnimation:NO];
     [self.view addSubview:_notifyView];
     
 

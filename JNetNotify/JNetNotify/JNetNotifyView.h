@@ -10,10 +10,17 @@
 @class JNetNotifyMessage;
 typedef NS_ENUM(NSInteger, JNetNotifyViewSubStyle) {
     JNetNotifyViewSubStyleDefault,
+    JNetNotifyViewSubStyleCustom,
 };
-@interface JNetNotifyView : UIView
 
--(instancetype)initWithJNetNotifyViewSubStyle:(JNetNotifyViewSubStyle)style;
+
+@interface JNetNotifyView : UIView
+/*
+    isAutoAnimation == yes 自动显示   isAutoAnimation == no 手势控制下一条消息显示
+    @仅支持JNetNotifyViewSubStyleDefault
+ */
+
+-(instancetype)initWithJNetNotifyViewSubStyle:(JNetNotifyViewSubStyle)style autoAnimation:(BOOL)isAutoAnimation;
 
 -(void)addNextMessage:(JNetNotifyMessage *)message;
 
