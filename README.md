@@ -1,5 +1,6 @@
 # JW_JNetNotify
 处理多条通知，依次展示
+```oc
 _notifyView=[[JNetNotifyView alloc]initWithJNetNotifyViewSubStyle:JNetNotifyViewSubStyleDefault autoAnimation:NO];
 [self.view addSubview:_notifyView];
 
@@ -10,3 +11,4 @@ for (int i=0; i<5; i++) {
 count++;
 }
 }
+```
